@@ -39,15 +39,15 @@ record Test : Set where
   open import Relation.Nullary.Core
   open import Data.Empty
 
-  property-1 : {x : ℕ} {xs : List ℕ} → x ∈ xs → ¬ (x ∉ xs)
-  property-1 car (add x₁ ¬p) = ⊥-elim (x₁ refl)
-  property-1 (cdr p) (add x₁ ¬p) with property-1 p ¬p
+  ∈→¬∉ : {x : ℕ} {xs : List ℕ} → x ∈ xs → ¬ (x ∉ xs)
+  ∈→¬∉ car (add x₁ ¬p) = ⊥-elim (x₁ refl)
+  ∈→¬∉ (cdr p) (add x₁ ¬p) with ∈→¬∉ p ¬p
   ... | prf = prf
 
-  property-2 : {x : ℕ} {xs : List ℕ} → x ∉ xs → ¬ (x ∈ xs)
-  property-2 empty ()
-  property-2 (add x p) car = ⊥-elim (x refl)
-  property-2 (add x p) (cdr ¬p) with property-2 p ¬p
+  ∉→¬∈ : {x : ℕ} {xs : List ℕ} → x ∉ xs → ¬ (x ∈ xs)
+  ∉→¬∈ empty ()
+  ∉→¬∈ (add x p) car = ⊥-elim (x refl)
+  ∉→¬∈ (add x p) (cdr ¬p) with ∉→¬∈ p ¬p
   ... | prf = prf
 
   contraposition : {p q : Set} → (p → q) → (¬ q → ¬ p)
@@ -55,45 +55,42 @@ record Test : Set where
 
   Sn≡Sm→n≡m : (n m : ℕ) → suc n ≡ suc m → n ≡ m
   Sn≡Sm→n≡m x .x refl = refl
+
   n≡m→Sn≡Sm : (n m : ℕ) → n ≡ m → suc n ≡ suc m
   n≡m→Sn≡Sm x .x refl = refl
-  n≢m→Sn≢Sm : (n m : ℕ) → ¬ n ≡ m → ¬ suc n ≡ suc m
+
+  n≢m→Sn≢Sm : (n m : ℕ) → n ≢ m → suc n ≢ suc m
   n≢m→Sn≢Sm n m neq = contraposition (Sn≡Sm→n≡m n m) neq
 
-  help1 : {n m : ℕ} {xs : List ℕ} → n ≢ m → n ∈ xs ⊎ n ∉ xs → n ∈ m ∷ xs ⊎ n ∉ m ∷ xs
-  help1 neq (inj₁ x) = inj₁ (cdr x)
-  help1 neq (inj₂ y) = inj₂ (add neq y)
+  n≡m⊎n≢m : (n m : ℕ) → n ≡ m ⊎ n ≢ m
+  n≡m⊎n≢m zero zero = inj₁ refl
+  n≡m⊎n≢m zero (suc m) = inj₂ (λ ())
+  n≡m⊎n≢m (suc n) zero = inj₂ (λ ())
+  n≡m⊎n≢m (suc n) (suc m) with n≡m⊎n≢m n m
+  n≡m⊎n≢m (suc n) (suc m) | inj₁ x = inj₁ (cong suc x)
+  n≡m⊎n≢m (suc n) (suc m) | inj₂ y = inj₂ (n≢m→Sn≢Sm n m y)
 
-  help2 : {n m : ℕ} {xs : List ℕ} → n ≡ m → n ∈ xs ⊎ n ∉ xs → n ∈ m ∷ xs ⊎ n ∉ m ∷ xs
-  help2 refl or = inj₁ car
+  n∈xs⊎n∉xs→n∈m∷xs⊎n∉m∷xs : {n m : ℕ} {xs : List ℕ} → n ∈ xs ⊎ n ∉ xs → n ∈ m ∷ xs ⊎ n ∉ m ∷ xs
+  n∈xs⊎n∉xs→n∈m∷xs⊎n∉m∷xs (inj₁ x) = inj₁ (cdr x)
+  n∈xs⊎n∉xs→n∈m∷xs⊎n∉m∷xs {zero} {zero} (inj₂ y) = inj₁ car
+  n∈xs⊎n∉xs→n∈m∷xs⊎n∉m∷xs {zero} {suc m} (inj₂ y) = inj₂ (add (λ ()) y)
+  n∈xs⊎n∉xs→n∈m∷xs⊎n∉m∷xs {suc n} {zero} (inj₂ y) = inj₂ (add (λ ()) y)
+  n∈xs⊎n∉xs→n∈m∷xs⊎n∉m∷xs {suc n} {suc m} (inj₂ y) with n≡m⊎n≢m n m
+  n∈xs⊎n∉xs→n∈m∷xs⊎n∉m∷xs {suc n} {suc .n} (inj₂ y) | inj₁ refl = inj₁ car
+  n∈xs⊎n∉xs→n∈m∷xs⊎n∉m∷xs {suc n} {suc m} (inj₂ y) | inj₂ y₁ = inj₂ (add (n≢m→Sn≢Sm n m y₁) y)
 
-  help3 : (n m : ℕ) → n ≡ m ⊎ n ≢ m
-  help3 zero zero = inj₁ refl
-  help3 zero (suc m) = inj₂ (λ ())
-  help3 (suc n) zero = inj₂ (λ ())
-  help3 (suc n) (suc m) with help3 n m
-  help3 (suc n) (suc m) | inj₁ x = inj₁ (cong suc x)
-  help3 (suc n) (suc m) | inj₂ y = inj₂ (n≢m→Sn≢Sm n m y)
-
-  help4 : {n m : ℕ} {xs : List ℕ} → n ∈ xs ⊎ n ∉ xs → n ∈ m ∷ xs ⊎ n ∉ m ∷ xs
-  help4 (inj₁ x) = inj₁ (cdr x)
-  help4 {zero} {zero} (inj₂ y) = inj₁ car
-  help4 {zero} {suc m} (inj₂ y) = inj₂ (add (λ ()) y)
-  help4 {suc n} {zero} (inj₂ y) = inj₂ (add (λ ()) y)
-  help4 {suc n} {suc m} (inj₂ y) with help3 n m
-  help4 {suc n} {suc .n} (inj₂ y) | inj₁ refl = inj₁ car
-  help4 {suc n} {suc m} (inj₂ y) | inj₂ y₁ = inj₂ (add (n≢m→Sn≢Sm n m y₁) y)
-
-  property-3 : (x : ℕ) → (xs : List ℕ) → x ∈ xs ⊎ x ∉ xs
-  property-3 zero [] = inj₂ empty
-  property-3 zero (zero ∷ xs) = inj₁ car
-  property-3 zero (suc x ∷ xs) with property-3 zero xs
-  ... | prf = help1 (λ ()) prf
-  property-3 (suc x) [] = inj₂ empty
-  property-3 (suc x) (zero ∷ xs) with property-3 (suc x) xs
-  ... | prf = help1 (λ ()) prf
-  property-3 (suc x) (suc x₁ ∷ xs) with property-3 (suc x) xs
+  ∈⊎∉ : (x : ℕ) → (xs : List ℕ) → x ∈ xs ⊎ x ∉ xs
+  ∈⊎∉ zero [] = inj₂ empty
+  ∈⊎∉ zero (zero ∷ xs) = inj₁ car
+  ∈⊎∉ zero (suc x ∷ xs) with ∈⊎∉ zero xs
+  ... | inj₁ x₁ = inj₁ (cdr x₁)
+  ... | inj₂ y = inj₂ (add (λ ()) y)
+  ∈⊎∉ (suc x) [] = inj₂ empty
+  ∈⊎∉ (suc x) (zero ∷ xs) with ∈⊎∉ (suc x) xs
+  ... | inj₁ x₁ = inj₁ (cdr x₁)
+  ... | inj₂ y = inj₂ (add (λ ()) y)
+  ∈⊎∉ (suc x) (suc x₁ ∷ xs) with ∈⊎∉ (suc x) xs
   ... | inj₁ x₂ = inj₁ (cdr x₂)
-  ... | inj₂ x₂ with help3 x x₁
-  property-3 (suc x) (suc .x ∷ xs) | inj₂ x₂ | inj₁ refl = inj₁ car
+  ... | inj₂ x₂ with n≡m⊎n≢m x x₁
+  ∈⊎∉ (suc x) (suc .x ∷ xs) | inj₂ x₂ | inj₁ refl = inj₁ car
   ... | inj₂ x₃ = inj₂ (add (n≢m→Sn≢Sm x x₁ x₃) x₂)
