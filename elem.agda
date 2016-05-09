@@ -36,7 +36,7 @@ record Test : Set where
   test11 : 1 ∉ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
   test11 = add (λ ()) (add (λ ()) (add (λ ()) (add (λ ()) empty)))
 
-  open import Relation.Nullary.Core
+  open import Relation.Nullary
   open import Data.Empty
 
   ∈→¬∉ : {x : ℕ} {xs : List ℕ} → x ∈ xs → ¬ (x ∉ xs)
